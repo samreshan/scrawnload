@@ -6,9 +6,11 @@
   </head>
   <body>
     <h1>Scrawnload test page</h1>
+
+    <h2>Direct files</h2>
     <p>
-      This page contains a direct-file video. After loading it, the Scrawnload
-      badge should show at least 1 and the popup should offer a download.
+      The badge should count these, and the popup should preview and download
+      them directly.
     </p>
     <video
       controls
@@ -19,5 +21,21 @@
       Direct link detection test:
       <a href="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm">flower.webm</a>
     </p>
+
+    <h2>HLS streams</h2>
+    <p>
+      These should show a quality picker on download and produce a single
+      playable .mp4. Previews play via hls.js in the popup.
+    </p>
+    <ul>
+      <li>
+        Unencrypted (Mux "Big Buck Bunny", 5 variants, ~10 min):
+        <a href="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">x36xhzz.m3u8</a>
+      </li>
+      <li>
+        AES-128 encrypted (JW Player "Oceans" test, 7 variants, ~1 min):
+        <a href="https://playertest.longtailvideo.com/adaptive/oceans_aes/oceans_aes.m3u8">oceans_aes.m3u8</a>
+      </li>
+    </ul>
   </body>
 </html>

@@ -1,59 +1,72 @@
 # Scrawnload
 
-A Chrome extension (Manifest V3) that detects video/audio files on the current
-page and downloads them with one click.
+A Chrome extension (Manifest V3) that detects video/audio on the current page,
+previews it in the popup, and downloads it — including HLS streams, which are
+merged into a single `.mp4` entirely in the browser with ffmpeg.wasm.
 
-This is the MVP tier: it handles direct media files (`.mp4`, `.webm`, `.mkv`,
-`.mov`, `.m4v`, `.mp3`, `.m4a`, `.ogg`, `.wav`, `.flac`, `.aac`). It also
-detects HLS/DASH manifests (`.m3u8`, `.mpd`) so you can see that a page has
-streaming media, but download is disabled for those — merging segments into a
-single file needs either an in-browser ffmpeg.wasm pipeline or a native
-companion app, neither of which is built yet.
+## Capabilities
 
-## How it works
+- **Direct media files** (`.mp4`, `.webm`, `.mkv`, `.mov`, `.m4v`, `.mp3`,
+  `.m4a`, `.ogg`, `.wav`, `.flac`, `.aac`): detect, preview, download.
+- **HLS streams** (`.m3u8`): detect, preview (via hls.js), and download with a
+  quality picker for multi-variant playlists. Segments are fetched in
+  parallel, AES-128-encrypted segments are decrypted with WebCrypto, and
+  everything is remuxed to a single `.mp4` by ffmpeg.wasm in an offscreen
+  document. Both MPEG-TS and fMP4 segment formats are supported.
+- **DASH** (`.mpd`): detected and listed, download not implemented.
 
-- `content-script.js` scans the DOM (`<video>`/`<audio>`/`<source>` tags,
-  `og:video` meta tags, direct media links) and re-scans on mutation and on a
-  timer for SPA navigations.
-- `background.js` is the service worker. It also watches network responses
-  via `chrome.webRequest.onResponseStarted` (non-blocking, read-only) to catch
-  media that isn't in the DOM, classifying by file extension or
-  `Content-Type` header. It keeps a per-tab list of detected items and clears
-  it on real navigations.
-- `popup.html`/`popup.js` list whatever's been detected for the active tab
-  and trigger `chrome.downloads.download()` for downloadable items.
+### Known limits
 
-## What works and what doesn't
+- **YouTube, Instagram, TikTok etc.** still won't work: they use `blob:` MSE
+  players with segmented, often DRM-protected delivery, and YouTube actively
+  breaks downloaders.
+- **DRM** (Widevine/FairPlay/SAMPLE-AES): out of scope; these show as
+  unsupported.
+- **Live streams** (no `EXT-X-ENDLIST`): rejected with an error.
+- **Memory**: segments are held in RAM before merging; very long/high-bitrate
+  videos (roughly >1–2 GB) may run out of memory.
+- **Referer/cookie-gated CDNs**: segment fetches come from the extension, not
+  the page, so hosts requiring a page Referer may return 403.
 
-**Works:** sites that serve video/audio as direct files — a `<video>` tag or
-network response pointing at an actual `.mp4`/`.webm`/etc. URL. Open
-`test/sample.html` in the browser to verify the extension end to end.
+## Architecture
 
-**Doesn't work (yet):** YouTube, Instagram, TikTok, and most large streaming
-platforms. Their players use Media Source Extensions — the `<video>` tag's
-`src` is a `blob:` URL that cannot be downloaded, and the media arrives as
-hundreds of separate segments (HLS/DASH), often DRM-protected. Supporting
-those requires the segment-merging tier from the roadmap; YouTube in
-particular actively breaks downloaders and is excluded even by mature
-extensions like Video DownloadHelper.
+```
+content-script.js   DOM scanning: <video>/<audio>/<source>, og:video, media links
+background.js       service worker: network observation (webRequest, non-blocking),
+                    per-tab detection store (storage.session), download + job
+                    orchestration, offscreen lifecycle
+offscreen.html/js   ffmpeg.wasm host: playlist fetch → segment fetch (4-way
+                    concurrent) → AES-128 decrypt (WebCrypto) → concat →
+                    remux (-c copy) → blob URL back to the service worker
+popup.html/js/css   detection list, click-to-expand previews (hls.js for
+                    streams), quality picker, progress bars rehydrated from
+                    storage.session job state
+lib/m3u8.js         minimal HLS playlist parser shared by popup + offscreen
+vendor/             pinned UMD builds: @ffmpeg/ffmpeg + core (single-thread,
+                    no SharedArrayBuffer needed), @ffmpeg/util, hls.js
+```
+
+Job state lives in `chrome.storage.session` (survives MV3 service-worker
+restarts); offscreen job results arrive as fresh messages so a worker restart
+mid-job can't lose them; blob URLs are revoked only after `chrome.downloads`
+reports the save finished.
 
 ## Load it locally
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode** (top right).
 3. Click **Load unpacked** and select this folder.
-4. Visit a page with video, click the toolbar icon.
+4. Open `test/sample.html` in a tab — the badge should count 4 items
+   (2 direct files + 2 HLS streams).
 
-## Roadmap
+## Vendored libraries
 
-- Site-specific parsers for pages that obfuscate media URLs.
-- Quality/format picker for multi-bitrate sources.
-- HLS/DASH downloading via ffmpeg.wasm (in-browser) or a native messaging
-  companion app (real ffmpeg, faster, requires a separate installer).
+`vendor/` is committed so the extension loads unpacked with no build step.
+To upgrade versions, edit the pins in `scripts/fetch-vendor.sh` and re-run it.
 
 ## Notes
 
 - Downloading media from a site may violate that site's terms of service —
   this tool doesn't make that determination for you.
-- DRM-protected content (Widevine/FairPlay) is out of scope; circumventing it
-  is illegal in most jurisdictions regardless of technical feasibility.
+- Circumventing DRM is illegal in most jurisdictions; this extension doesn't
+  and won't.
