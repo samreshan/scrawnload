@@ -29,7 +29,7 @@ function classifyContentType(contentType) {
 
 function updateBadge(tabId, count) {
   chrome.action.setBadgeText({ tabId, text: count ? String(count) : "" });
-  chrome.action.setBadgeBackgroundColor({ tabId, color: "#6d5efc" });
+  chrome.action.setBadgeBackgroundColor({ tabId, color: "#009fa0" });
 }
 
 // The content script can report several URLs from one scan() pass in the

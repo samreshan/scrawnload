@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Scrawnload popup preview (dev harness)</title>
+    <link rel="stylesheet" href="../popup.css" />
+    <style>
+      /* Harness-only chrome: real popup.html has none of this. */
+      html, body { background: #444; }
+      body { display: flex; justify-content: center; padding: 32px; }
+      #frame { width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    </style>
+  </head>
+  <body>
+    <div id="frame">
+      <header>
+        <div class="brand">
+          <img src="../icons/icon48.png" alt="" width="18" height="18" />
+          <span class="wordmark">scrawnload<span class="cursor" aria-hidden="true"></span></span>
+        </div>
+        <span class="header-count" id="count">0 items</span>
+      </header>
+      <div id="list" class="list" role="list">
+        <p class="empty">scanning page…</p>
+      </div>
+      <footer>local-only · no data leaves this tab</footer>
+    </div>
+
+    <script>
+      // Minimal chrome.* mock so popup.js runs unmodified outside the
+      // extension context, with fake detected items covering every UI state.
+      const FAKE_ITEMS = [
+        { url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", kind: "file", source: "dom", title: "flower" },
+        { url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower-fail.webm", kind: "file", source: "network", title: "flower-fail" },
+        { url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", kind: "stream", source: "dom", title: "big buck bunny" },
+        { url: "https://playertest.longtailvideo.com/adaptive/oceans_aes/oceans_aes.m3u8", kind: "stream", source: "network", title: "oceans aes" },
+        { url: "https://example.com/manifest.mpd", kind: "stream", source: "dom", title: "dash sample" },
+      ];
+
+      const sessionListeners = [];
+      const jobs = {};
+
+      function fireSessionChange(jobId) {
+        const change = { [`job-${jobId}`]: { newValue: jobs[jobId] } };
+        sessionListeners.forEach((fn) => fn(change));
+      }
+
+      function simulateStreamJob(jobId) {
+        jobs[jobId] = { jobId, status: "running", phase: "fetching", done: 0, total: 12 };
+        let done = 0;
+        const tick = () => {
+          done++;
+          jobs[jobId] = { jobId, status: "running", phase: "fetching", done, total: 12 };
+          fireSessionChange(jobId);
+          if (done < 12) {
+            setTimeout(tick, 180);
+          } else {
+            jobs[jobId] = { jobId, status: "running", phase: "merging", done: 40, total: 100 };
+            fireSessionChange(jobId);
+            setTimeout(() => {
+              jobs[jobId] = { jobId, status: "complete" };
+              fireSessionChange(jobId);
+            }, 900);
+          }
+        };
+        setTimeout(tick, 300);
+      }
+
+      window.chrome = {
+        tabs: { query: (_opts) => Promise.resolve([{ id: 1 }]) },
+        storage: {
+          session: {
+            onChanged: { addListener: (fn) => sessionListeners.push(fn) },
+          },
+        },
+        runtime: {
+          sendMessage: (msg, cb) => {
+            if (msg.type === "GET_DETECTED") return cb({ items: FAKE_ITEMS });
+            if (msg.type === "GET_JOBS") return cb({ jobs: [] });
+            if (msg.type === "DOWNLOAD") {
+              const fail = msg.url.includes("fail");
+              setTimeout(() => cb(fail ? { ok: false, error: "network error" } : { ok: true }), 500);
+              return;
+            }
+            if (msg.type === "DOWNLOAD_STREAM") {
+              simulateStreamJob(msg.jobId);
+              cb && cb({ ok: true });
+              return;
+            }
+          },
+        },
+      };
+    </script>
+    <script src="../vendor/hls.min.js"></script>
+    <script src="../lib/m3u8.js"></script>
+    <script src="../popup.js"></script>
+  </body>
+</html>

@@ -59,7 +59,7 @@ function openPreview(item, row) {
       hls.on(Hls.Events.ERROR, (_evt, data) => {
         if (data.fatal) {
           panel.classList.add("preview-error");
-          panel.textContent = `Preview failed: ${data.details}`;
+          panel.textContent = `preview failed: ${data.details}`;
           hls.destroy();
         }
       });
@@ -70,7 +70,7 @@ function openPreview(item, row) {
     media.src = item.url;
     media.addEventListener("error", () => {
       panel.classList.add("preview-error");
-      panel.textContent = "Preview failed to load (site may block hotlinking)";
+      panel.textContent = "preview failed to load (site may block hotlinking)";
     });
   }
 
@@ -106,7 +106,7 @@ async function pickVariant(item, row) {
     picker.className = "quality-picker";
     const label = document.createElement("div");
     label.className = "quality-label";
-    label.textContent = "Pick quality:";
+    label.textContent = "pick quality";
     picker.appendChild(label);
 
     parsed.variants
@@ -116,8 +116,8 @@ async function pickVariant(item, row) {
         const btn = document.createElement("button");
         btn.className = "quality-option";
         const mbps = variant.bandwidth
-          ? `${(variant.bandwidth / 1e6).toFixed(1)} Mbps`
-          : "unknown rate";
+          ? `${(variant.bandwidth / 1e6).toFixed(1)}mbps`
+          : "rate unknown";
         btn.textContent = variant.resolution ? `${variant.resolution} · ${mbps}` : mbps;
         btn.addEventListener("click", () => {
           picker.remove();
@@ -128,7 +128,7 @@ async function pickVariant(item, row) {
 
     const cancel = document.createElement("button");
     cancel.className = "quality-option quality-cancel";
-    cancel.textContent = "Cancel";
+    cancel.textContent = "cancel";
     cancel.addEventListener("click", () => {
       picker.remove();
       reject(new Error("cancelled"));
@@ -142,20 +142,22 @@ async function pickVariant(item, row) {
 function setProgress(row, jobState) {
   let bar = row.querySelector(".progress");
   let fill = row.querySelector(".progress-fill");
-  let status = row.querySelector(".item-meta");
+  const status = row.querySelector(".meta-status");
 
   if (jobState.status === "complete") {
     if (bar) bar.remove();
-    row.querySelector("button").textContent = "Saved";
+    const btn = row.querySelector("button");
+    btn.textContent = "saved";
+    if (status) status.textContent = "saved";
     return;
   }
   if (jobState.status === "error") {
     if (bar) bar.remove();
     const btn = row.querySelector("button");
-    btn.textContent = "Failed";
+    btn.textContent = "retry";
     btn.disabled = false;
     btn.title = jobState.error || "";
-    if (status) status.textContent = `Error: ${(jobState.error || "").slice(0, 60)}`;
+    if (status) status.textContent = `error: ${(jobState.error || "").slice(0, 50)}`;
     return;
   }
 
@@ -171,7 +173,9 @@ function setProgress(row, jobState) {
   fill.style.width = `${pct}%`;
   if (status) {
     status.textContent =
-      jobState.phase === "merging" ? `Merging… ${pct}%` : `Fetching segments ${jobState.done}/${jobState.total}`;
+      jobState.phase === "merging"
+        ? `merging ${pct}%`
+        : `fetching ${jobState.done}/${jobState.total}`;
   }
 }
 
@@ -179,23 +183,23 @@ const rowsByJobId = new Map();
 
 async function startStreamDownload(item, row, btn) {
   btn.disabled = true;
-  btn.textContent = "Preparing…";
+  btn.textContent = "preparing…";
   let playlistUrl;
   try {
     playlistUrl = await pickVariant(item, row);
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = "Download";
+    btn.textContent = "download";
     if (err.message !== "cancelled") {
-      const meta = row.querySelector(".item-meta");
-      if (meta) meta.textContent = err.message;
+      const status = row.querySelector(".meta-status");
+      if (status) status.textContent = err.message;
     }
     return;
   }
 
   const jobId = crypto.randomUUID();
   rowsByJobId.set(jobId, row);
-  btn.textContent = "Downloading…";
+  btn.textContent = "downloading…";
   chrome.runtime.sendMessage(
     {
       type: "DOWNLOAD_STREAM",
@@ -221,47 +225,84 @@ chrome.storage.session.onChanged.addListener((changes) => {
   }
 });
 
+function kindPill(item, isDash) {
+  const pill = document.createElement("span");
+  if (isDash) {
+    pill.className = "kind-pill dash";
+    pill.textContent = "dash";
+  } else if (item.kind === "stream") {
+    pill.className = "kind-pill stream";
+    pill.textContent = "hls";
+  } else {
+    pill.className = "kind-pill file";
+    pill.textContent = extFromUrl(item.url) || "file";
+  }
+  return pill;
+}
+
 function renderItem(item) {
   const row = document.createElement("div");
   row.className = "item";
+  row.setAttribute("role", "listitem");
 
   const info = document.createElement("div");
   info.className = "item-info";
+  info.tabIndex = 0;
+  info.setAttribute("role", "button");
+  info.setAttribute("aria-label", "toggle preview");
 
   const name = document.createElement("div");
   name.className = "item-name";
   name.textContent = filenameFromUrl(item.url, item.title);
   info.appendChild(name);
 
+  const isDash = /\.mpd(\?|#|$)/i.test(item.url);
+
   const meta = document.createElement("div");
   meta.className = "item-meta";
-  const ext = extFromUrl(item.url) || (item.kind === "stream" ? "stream" : "file");
-  meta.textContent = `${ext.toUpperCase()} · ${item.source} · click to preview`;
+  meta.appendChild(kindPill(item, isDash));
+
+  const status = document.createElement("span");
+  status.className = "meta-status";
+  status.textContent = item.source;
+  meta.appendChild(status);
+
   info.appendChild(meta);
 
+  const openPreviewHandler = () => togglePreview(item, row);
+  info.addEventListener("click", openPreviewHandler);
+  info.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openPreviewHandler();
+    }
+  });
+
   row.appendChild(info);
-  info.addEventListener("click", () => togglePreview(item, row));
 
   const btn = document.createElement("button");
-  const isDash = /\.mpd(\?|#|$)/i.test(item.url);
+  btn.className = "action";
   if (isDash) {
-    btn.textContent = "DASH — unsupported";
+    btn.classList.add("is-ghost");
+    btn.textContent = "unsupported";
     btn.disabled = true;
+    btn.title = "DASH download isn't implemented yet";
   } else if (item.kind === "stream") {
-    btn.textContent = "Download";
+    btn.textContent = "download";
     btn.addEventListener("click", () => startStreamDownload(item, row, btn));
   } else {
-    btn.textContent = "Download";
+    btn.textContent = "download";
     btn.addEventListener("click", () => {
       btn.disabled = true;
-      btn.textContent = "Saving…";
+      btn.textContent = "saving…";
       chrome.runtime.sendMessage(
         { type: "DOWNLOAD", url: item.url, filename: filenameFromUrl(item.url, item.title) },
         (response) => {
           if (response && response.ok) {
-            btn.textContent = "Saved";
+            btn.textContent = "saved";
           } else {
-            btn.textContent = "Failed";
+            btn.classList.add("is-danger");
+            btn.textContent = "retry";
             btn.disabled = false;
           }
         }
@@ -285,7 +326,7 @@ function rehydrateJobs(listEl) {
       const btn = row.querySelector("button");
       if (job.status === "running") {
         btn.disabled = true;
-        btn.textContent = "Downloading…";
+        btn.textContent = "downloading…";
       }
       setProgress(row, job);
     }
@@ -298,7 +339,7 @@ async function init() {
   const countEl = document.getElementById("count");
 
   if (!tab) {
-    listEl.innerHTML = '<p class="empty">No active tab.</p>';
+    listEl.innerHTML = '<p class="empty">no active tab</p>';
     return;
   }
 
@@ -306,7 +347,7 @@ async function init() {
     const items = (response && response.items) || [];
     listEl.innerHTML = "";
     if (items.length === 0) {
-      listEl.innerHTML = '<p class="empty">No media detected on this page yet.</p>';
+      listEl.innerHTML = '<p class="empty">no media detected on this page yet</p>';
     } else {
       items
         .slice()

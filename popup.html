@@ -7,15 +7,16 @@
   </head>
   <body>
     <header>
-      <img src="icons/icon48.png" alt="" width="20" height="20" />
-      <h1>Scrawnload</h1>
+      <div class="brand">
+        <img src="icons/icon48.png" alt="" width="18" height="18" />
+        <span class="wordmark">scrawnload<span class="cursor" aria-hidden="true"></span></span>
+      </div>
+      <span class="header-count" id="count">0 items</span>
     </header>
-    <div id="list" class="list">
-      <p class="empty">Scanning this page…</p>
+    <div id="list" class="list" role="list">
+      <p class="empty">scanning page…</p>
     </div>
-    <footer>
-      <span id="count">0 items</span>
-    </footer>
+    <footer>local-only · no data leaves this tab</footer>
     <script src="vendor/hls.min.js"></script>
     <script src="lib/m3u8.js"></script>
     <script src="popup.js"></script>

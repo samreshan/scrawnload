@@ -64,6 +64,15 @@ reports the save finished.
 `vendor/` is committed so the extension loads unpacked with no build step.
 To upgrade versions, edit the pins in `scripts/fetch-vendor.sh` and re-run it.
 
+## Design
+
+See [PRODUCT.md](PRODUCT.md) (who it's for, brand personality, anti-references)
+and [DESIGN.md](DESIGN.md) (color tokens with verified contrast ratios,
+typography, component states). The popup commits to a dark, terminal-native
+look — no light theme, by design. [test/popup-preview.html](test/popup-preview.html)
+is a standalone harness (mocked `chrome.*` APIs) for iterating on the popup UI
+in a plain browser tab without loading the real extension.
+
 ## Notes
 
 - Downloading media from a site may violate that site's terms of service —
