@@ -1,11 +1,16 @@
 const MEDIA_EXT_REGEX = /\.(mp4|webm|mkv|mov|m4v|m4a|mp3|ogg|oga|wav|flac|aac)(\?|#|$)/i;
 const STREAM_EXT_REGEX = /\.(m3u8|mpd)(\?|#|$)/i;
 
-const detectedByTab = new Map();
+// Detections live in chrome.storage.session, not module state: MV3 kills the
+// service worker after ~30s idle, which would wipe an in-memory map.
+function tabKey(tabId) {
+  return `tab-${tabId}`;
+}
 
-function getTabMap(tabId) {
-  if (!detectedByTab.has(tabId)) detectedByTab.set(tabId, new Map());
-  return detectedByTab.get(tabId);
+async function getTabItems(tabId) {
+  const key = tabKey(tabId);
+  const data = await chrome.storage.session.get(key);
+  return data[key] || {};
 }
 
 function classifyUrl(url) {
@@ -22,19 +27,25 @@ function classifyContentType(contentType) {
   return null;
 }
 
-function updateBadge(tabId) {
-  const tabMap = detectedByTab.get(tabId);
-  const count = tabMap ? tabMap.size : 0;
+function updateBadge(tabId, count) {
   chrome.action.setBadgeText({ tabId, text: count ? String(count) : "" });
   chrome.action.setBadgeBackgroundColor({ tabId, color: "#6d5efc" });
 }
 
-function addDetection(tabId, item) {
+async function addDetection(tabId, item) {
   if (tabId === undefined || tabId < 0) return;
-  const tabMap = getTabMap(tabId);
-  if (tabMap.has(item.url)) return;
-  tabMap.set(item.url, item);
-  updateBadge(tabId);
+  // blob: and data: URLs come from MSE players and can't be downloaded.
+  if (/^(blob|data):/.test(item.url)) return;
+  const items = await getTabItems(tabId);
+  if (items[item.url]) return;
+  items[item.url] = item;
+  await chrome.storage.session.set({ [tabKey(tabId)]: items });
+  updateBadge(tabId, Object.keys(items).length);
+}
+
+async function clearTab(tabId) {
+  await chrome.storage.session.remove(tabKey(tabId));
+  updateBadge(tabId, 0);
 }
 
 // Network-level detection: observe responses without blocking them.
@@ -78,8 +89,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "GET_DETECTED") {
-    const tabMap = detectedByTab.get(message.tabId);
-    sendResponse({ items: tabMap ? Array.from(tabMap.values()) : [] });
+    getTabItems(message.tabId).then((items) => {
+      sendResponse({ items: Object.values(items) });
+    });
     return true;
   }
 
@@ -100,11 +112,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Clear detections when a tab does a real (non-SPA) navigation.
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
   if (details.frameId === 0) {
-    detectedByTab.delete(details.tabId);
-    updateBadge(details.tabId);
+    clearTab(details.tabId);
   }
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  detectedByTab.delete(tabId);
+  chrome.storage.session.remove(tabKey(tabId));
 });

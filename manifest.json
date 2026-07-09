@@ -27,6 +27,6 @@
       "all_frames": true
     }
   ],
-  "permissions": ["downloads", "webRequest", "webNavigation", "tabs"],
+  "permissions": ["downloads", "storage", "webRequest", "webNavigation", "tabs"],
   "host_permissions": ["<all_urls>"]
 }

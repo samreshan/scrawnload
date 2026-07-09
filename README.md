@@ -23,6 +23,20 @@ companion app, neither of which is built yet.
 - `popup.html`/`popup.js` list whatever's been detected for the active tab
   and trigger `chrome.downloads.download()` for downloadable items.
 
+## What works and what doesn't
+
+**Works:** sites that serve video/audio as direct files — a `<video>` tag or
+network response pointing at an actual `.mp4`/`.webm`/etc. URL. Open
+`test/sample.html` in the browser to verify the extension end to end.
+
+**Doesn't work (yet):** YouTube, Instagram, TikTok, and most large streaming
+platforms. Their players use Media Source Extensions — the `<video>` tag's
+`src` is a `blob:` URL that cannot be downloaded, and the media arrives as
+hundreds of separate segments (HLS/DASH), often DRM-protected. Supporting
+those requires the segment-merging tier from the roadmap; YouTube in
+particular actively breaks downloaders and is excluded even by mature
+extensions like Video DownloadHelper.
+
 ## Load it locally
 
 1. Open `chrome://extensions`.

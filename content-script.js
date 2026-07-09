@@ -3,7 +3,8 @@
   const seen = new Set();
 
   function report(url) {
-    if (!url) return;
+    // blob:/data: sources come from MSE players and can't be downloaded.
+    if (!url || /^(blob|data):/.test(url)) return;
     let absolute;
     try {
       absolute = new URL(url, document.baseURI).href;
