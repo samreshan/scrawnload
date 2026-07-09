@@ -99,10 +99,11 @@ async function setJobState(jobId, state) {
   await chrome.storage.session.set({ [key]: { ...(data[key] || {}), ...state } });
 }
 
-async function startStreamJob({ jobId, playlistUrl, filename }) {
+async function startStreamJob({ jobId, playlistUrl, originUrl, filename }) {
   await setJobState(jobId, {
     jobId,
     playlistUrl,
+    originUrl,
     filename,
     status: "running",
     phase: "starting",
