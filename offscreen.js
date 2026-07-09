@@ -7,6 +7,8 @@
 const { FFmpeg } = FFmpegWASM;
 
 const FETCH_CONCURRENCY = 4;
+const FETCH_MAX_ATTEMPTS = 4;
+const FETCH_TIMEOUT_MS = 20000;
 
 let ffmpeg = null;
 let ffmpegLoading = null;
@@ -42,10 +44,56 @@ function reportProgress(jobId, phase, done, total) {
     .catch(() => {});
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+// Marks whether a failed attempt is worth retrying: network-level failures
+// (DNS, CORS, connection reset, our own timeout) always are; HTTP errors
+// only for 429/5xx — retrying a 403/404 just delays the inevitable.
+class FetchAttemptError extends Error {
+  constructor(message, retryable) {
+    super(message);
+    this.retryable = retryable;
+  }
+}
+
+async function fetchOnce(url, signal) {
+  let res;
+  try {
+    res = await fetch(url, { credentials: "include", signal });
+  } catch (err) {
+    throw new FetchAttemptError(err.message, true);
+  }
+  if (res.ok) return new Uint8Array(await res.arrayBuffer());
+  throw new FetchAttemptError(`HTTP ${res.status} fetching ${url}`, isRetryableStatus(res.status));
+}
+
+// A long HLS download means hundreds of segment requests; without retry,
+// any single transient blip (or a CDN briefly rate-limiting after many
+// rapid requests) aborts the whole job with a raw "Failed to fetch".
 async function fetchBytes(url) {
-  const res = await fetch(url, { credentials: "include" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
-  return new Uint8Array(await res.arrayBuffer());
+  let lastErr;
+  for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      return await fetchOnce(url, controller.signal);
+    } catch (err) {
+      lastErr = err;
+      if (!err.retryable || attempt === FETCH_MAX_ATTEMPTS) {
+        throw new Error(attempt > 1 ? `${err.message} (failed after ${attempt} attempts)` : err.message);
+      }
+      await sleep(300 * 2 ** (attempt - 1) + Math.random() * 200);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastErr;
 }
 
 // HLS AES-128: segments are AES-CBC encrypted. When the playlist gives no
