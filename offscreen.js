@@ -13,6 +13,7 @@ let ffmpegLoading = null;
 let currentJobId = null;
 // Serialize jobs: they share one ffmpeg instance and its virtual FS.
 let jobQueue = Promise.resolve();
+let activeJobs = 0;
 // Blob URLs handed to the service worker, kept until it confirms the
 // download finished so revocation doesn't race the download.
 const pendingBlobUrls = new Map();
@@ -170,6 +171,7 @@ async function runJob({ jobId, playlistUrl, filename }) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "RUN_HLS_JOB") {
+    activeJobs++;
     jobQueue = jobQueue.then(() =>
       runJob(message)
         .then(({ blobUrl, filename }) => {
@@ -187,6 +189,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             error: err.message,
           });
         })
+        .finally(() => {
+          activeJobs--;
+        })
     );
     sendResponse({ accepted: true });
     return;
@@ -198,7 +203,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       URL.revokeObjectURL(url);
       pendingBlobUrls.delete(message.jobId);
     }
-    sendResponse({ ok: true, busy: pendingBlobUrls.size > 0 });
+    // busy guards against the service worker closing this document while
+    // another job is still queued or running.
+    sendResponse({ ok: true, busy: activeJobs > 0 || pendingBlobUrls.size > 0 });
     return;
   }
 });
