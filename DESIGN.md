@@ -6,40 +6,45 @@ technical, terminal-native dark mode).
 
 ## Theme
 
-Dark is a **committed identity**, not a `prefers-color-scheme` fallback —
-`:root { color-scheme: dark; }` and there is no light variant. This was a
-deliberate choice (confirmed with the user) matching the "terminal-native
-dev tool" personality, the same way Vercel, Raycast, or Warp commit to dark
-rather than adapting to OS preference.
+Light is a **committed identity**, not a `prefers-color-scheme` fallback —
+`:root { color-scheme: light; }` and there is no dark variant. This
+supersedes the project's original dark terminal-native theme: the personality
+(precise & technical) and name are unchanged, but a design review judged the
+dark+teal/amber pairing wasn't landing. Same non-adaptive-single-theme
+philosophy as before, just flipped.
 
 ## Color
 
 All tokens in OKLCH, defined in [popup.css](popup.css). Contrast was
 computed (not eyeballed) via a standalone OKLab→linear-sRGB→WCAG-luminance
-script; see the numbers below.
+script, and the two color-mix-based pill fills were additionally verified
+against real rendered pixels (sampled from actual screenshots) since
+`color-mix()`'s composited output isn't reliably hand-computable.
 
 | Token | Value | Hex (sRGB) | Role |
 |---|---|---|---|
-| `--bg` | `oklch(0.09 0 0)` | `#020202` | Page background. Pure neutral, no hue tint. |
-| `--surface` | `oklch(0.15 0 0)` | `#0b0b0b` | Row hover, panels, quality picker. |
-| `--surface-hover` | `oklch(0.19 0 0)` | — | Reserved for a second hover layer if needed. |
-| `--border` | `oklch(0.24 0 0)` | `#1f1f1f` | Dividers, panel borders. |
-| `--border-strong` | `oklch(0.32 0 0)` | — | Hover border on ghost buttons. |
-| `--ink` | `oklch(0.94 0 0)` | `#ebebeb` | Primary text. |
-| `--muted` | `oklch(0.62 0 0)` | `#868686`/`#9e9e9e` | Secondary text, metadata. |
-| `--faint` | `oklch(0.42 0 0)` | — | Separators, disabled text. |
-| `--primary` | `oklch(0.62 0.14 195)` | `#009fa0` | Primary action (download buttons, progress fill, focus ring, file-kind pill). Cyan-teal — deliberately *not* the purple/indigo of the old design, which was flagged as the generic-extension anti-reference. |
-| `--primary-hover` | `oklch(0.67 0.14 195)` | — | |
-| `--accent` | `oklch(0.82 0.15 70)` | `#ffb147` | Second brand color: HLS-kind pill, quality picker chips read against it conceptually. Warm amber, ~125° from primary — both hue- and lightness-distinct (verified `primary vs accent = 1.81:1`, clears the ≥1.7 distinctness floor). |
-| `--danger` | `oklch(0.60 0.19 25)` | `#db4241` | Failed downloads ("retry" button). |
-| `--danger-hover` | `oklch(0.65 0.19 25)` | — | |
-| `--on-fill` | `oklch(0.12 0 0)` | near-black | Text/icon color for anything sitting on `--primary`/`--accent`/`--danger`. Computed, not assumed: black text beats white text on all three fills here because their WCAG relative luminance is higher than their OKLCH `L` suggests (cyan and amber both have high-luminance-weighted channels). |
+| `--bg` | `oklch(1 0 0)` | `#ffffff` | Page background. Pure white. |
+| `--surface` | `oklch(0.97 0 0)` | `#f5f5f5` | Row hover, panels, quality picker. |
+| `--surface-hover` | `oklch(0.94 0 0)` | — | Reserved second hover layer. |
+| `--border` | `oklch(0.88 0 0)` | `#d7d7d7` | Dividers, panel borders. |
+| `--border-strong` | `oklch(0.76 0 0)` | `#b1b1b1` | Hover border on ghost buttons. |
+| `--ink` | `oklch(0.20 0 0)` | `#161616` | Primary text. |
+| `--muted` | `oklch(0.46 0 0)` | `#585858` | Secondary text, metadata. |
+| `--faint` | `oklch(0.65 0 0)` | — | Separators, disabled text. |
+| `--primary` | `oklch(0.39 0.12 195)` | `#005759` | Primary action (download buttons, progress fill, focus ring, file-kind pill). Same teal hue as the original identity, recalibrated darker for a white background. |
+| `--primary-hover` | `oklch(0.33 0.12 195)` | `#004648` | |
+| `--accent` | `oklch(0.60 0.16 58)` | `#c46200` | Second brand color: HLS-kind pill tint generator. Kept bright so it still reads as amber and stays hue+lightness distinct from primary. |
+| `--accent-ink` | `oklch(0.40 0.16 55)` | `#832000` | Separate, darker text-on-tint color for the accent pill. `--accent` itself measured only 3.11:1 as its own pill's text (checked empirically), because a tint bright enough to read as "amber" isn't automatically dark enough to be legible on the pale background it generates — this token exists specifically to decouple those two needs. |
+| `--danger` | `oklch(0.50 0.20 25)` | `#bb061e` | Failed downloads ("retry" button). |
+| `--danger-hover` | `oklch(0.44 0.20 25)` | `#a50007` | |
+| `--on-fill` | `oklch(1 0 0)` | white | Text/icon color for `--primary`/`--danger` fills. Flipped from the old dark theme's near-black `--on-fill`: white now wins on both (verified 8.42:1 / 6.67:1) because a fill dark enough to stand out on white pushes its luminance low enough that white text reads best — the opposite of what held on a dark background. |
 
 Verified contrast ratios:
-- `ink` vs `bg`: **17.36:1** (body text, floor is 7:1)
-- `muted` vs `bg`: **5.68:1** / vs `surface`: **5.40:1** (floor 3.5:1)
-- `on-fill` vs `primary`: **6.23:1**, vs `accent`: **11.25:1**, vs `danger`: **4.68:1** (floor 4.5:1 for normal text)
-- `primary` vs `accent`: **1.81:1** (floor 1.7:1 — the two brand colors must read as distinct, not near-duplicates)
+- `ink` vs `bg`: **18.10:1** (body text, floor is 7:1)
+- `muted` vs `bg`: **7.13:1** (floor 3.5:1)
+- `on-fill` (white) vs `primary`: **8.42:1**, vs `danger`: **6.67:1** (floor 4.5:1)
+- `primary` vs `accent`: **2.03:1** (floor 1.7:1 — the two brand colors must read as distinct, not near-duplicates)
+- kind-pill text vs its own composited tint background (real rendered pixels, not theoretical): file/primary **5.77:1**, stream/accent **7.29:1** (after the `--accent-ink` fix; the naive `color: var(--accent)` version measured **3.11:1** and failed), dash/muted **5.09:1**
 
 Color strategy: **Restrained-leaning-Committed**. Two brand hues (primary
 teal, accent amber) plus one semantic danger red — deliberately not more.
@@ -102,10 +107,9 @@ page (`--duration` drops to `0ms`).
 ## Icon
 
 Toolbar icon: same rounded-square-with-download-arrow glyph as before,
-recolored from the old purple (`#6d5efc`) to `--primary` teal (`#009fa0`)
-to match. White glyph on the filled square — icons get the WCAG
-non-text-contrast floor (3:1), not the 4.5:1 text floor, and white clears
-that against this teal comfortably.
+recolored to the new `--primary` teal (`#005759`) to match. White glyph on
+the filled square — icons get the WCAG non-text-contrast floor (3:1), not
+the 4.5:1 text floor, and white clears that against this teal comfortably.
 
 ## Dev harness
 

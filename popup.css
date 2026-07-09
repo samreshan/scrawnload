@@ -1,31 +1,43 @@
 /*
   Design tokens — see DESIGN.md for the full system and contrast math.
-  Dark is a committed identity here, not a prefers-color-scheme fallback:
-  Scrawnload doesn't adapt to OS theme.
+  Light is a committed identity here, not a prefers-color-scheme fallback:
+  Scrawnload doesn't adapt to OS theme. (Superseded the original dark
+  terminal-native theme — see DESIGN.md for why.)
 */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --bg: oklch(0.09 0 0);
-  --surface: oklch(0.15 0 0);
-  --surface-hover: oklch(0.19 0 0);
-  --border: oklch(0.24 0 0);
-  --border-strong: oklch(0.32 0 0);
+  --bg: oklch(1 0 0);
+  --surface: oklch(0.97 0 0);
+  --surface-hover: oklch(0.94 0 0);
+  --border: oklch(0.88 0 0);
+  --border-strong: oklch(0.76 0 0);
 
-  --ink: oklch(0.94 0 0);
-  --muted: oklch(0.62 0 0);
-  --faint: oklch(0.42 0 0);
+  --ink: oklch(0.20 0 0);
+  --muted: oklch(0.46 0 0);
+  --faint: oklch(0.65 0 0);
 
-  --primary: oklch(0.62 0.14 195);
-  --primary-hover: oklch(0.67 0.14 195);
-  --accent: oklch(0.82 0.15 70);
-  --danger: oklch(0.60 0.19 25);
-  --danger-hover: oklch(0.65 0.19 25);
+  --primary: oklch(0.39 0.12 195);
+  --primary-hover: oklch(0.33 0.12 195);
+  --accent: oklch(0.60 0.16 58);
+  --danger: oklch(0.50 0.20 25);
+  --danger-hover: oklch(0.44 0.20 25);
 
-  /* Fills are saturated mid/high-luminance colors — dark text wins contrast
-     on all three (verified: black-on-primary 6.45:1, black-on-accent
-     11.64:1, black-on-danger 4.85:1). Neutral surfaces get light text. */
-  --on-fill: oklch(0.12 0 0);
+  /* Unlike the old dark theme (where near-black text won on every fill),
+     on a light background the primary/danger fills are dark enough that
+     WHITE text wins (verified: white-on-primary 8.42:1, white-on-danger
+     6.67:1). */
+  --on-fill: oklch(1 0 0);
+
+  /* --accent stays bright (0.60L) so it still reads as amber and stays
+     distinct from --primary (verified 2.03:1 apart) — but that same
+     brightness means text painted in --accent directly, on the pale tint
+     that brightness generates, only measured 3.11:1 in the actual
+     rendered pixels (checked empirically, not assumed — color-mix's
+     composited output isn't reliably hand-computable). --accent-ink is a
+     separate, darker shade of the same hue reserved for that one
+     text-on-tint case; re-verify empirically if the tint recipe changes. */
+  --accent-ink: oklch(0.40 0.16 55);
 
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
@@ -126,6 +138,34 @@ header {
   color: var(--muted);
 }
 
+/* --- first-run acknowledgment --- */
+
+.ack {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ack-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--duration) var(--ease-out-expo);
+}
+
+.ack-dismiss:hover {
+  color: var(--ink);
+}
+
 /* --- list --- */
 
 .list {
@@ -208,7 +248,7 @@ header {
 
 .kind-pill.stream {
   background: color-mix(in oklch, var(--accent) 22%, transparent);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .kind-pill.dash {

@@ -333,7 +333,25 @@ function rehydrateJobs(listEl) {
   });
 }
 
+// Shown exactly once, ever, regardless of whether the user clicks "got it" —
+// the flag is written the moment the banner renders, not on dismissal, so a
+// user who ignores it (reasonable: it deliberately doesn't compete with the
+// download button) doesn't see it again on every subsequent popup open.
+function initAck() {
+  const ack = document.getElementById("ack");
+  chrome.storage.local.get("ack-v1", (data) => {
+    if (!data["ack-v1"]) {
+      ack.hidden = false;
+      chrome.storage.local.set({ "ack-v1": true });
+    }
+  });
+  document.getElementById("ack-dismiss").addEventListener("click", () => {
+    ack.hidden = true;
+  });
+}
+
 async function init() {
+  initAck();
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const listEl = document.getElementById("list");
   const countEl = document.getElementById("count");

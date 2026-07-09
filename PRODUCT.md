@@ -31,4 +31,4 @@ Precise & technical. Dev-tool energy — built by engineers, for anyone, but it 
 
 ## Accessibility & Inclusion
 
-WCAG AA contrast minimum (body text ≥4.5:1, large text ≥3:1), including against the dark near-black surface. All interactive elements keyboard-reachable with a visible focus state. `prefers-reduced-motion` respected for every transition. Color is never the sole signal for state — pair with icon or text.
+WCAG AA contrast minimum (body text ≥4.5:1, large text ≥3:1). All interactive elements keyboard-reachable with a visible focus state. `prefers-reduced-motion` respected for every transition. Color is never the sole signal for state — pair with icon or text.

@@ -43,7 +43,11 @@ read by Chrome itself. Draft once, paste into the relevant dashboard fields.
 >
 > Source available; privacy policy linked below.
 
-**Privacy policy URL:** (fill in once hosted — see checklist below)
+(Note: this prose is duplicated in `how-it-works.html` — keep the two in sync if edited.)
+
+**Privacy policy URL:** `https://<your-host>/privacy.html` (fill in once hosted)
+
+**Website field (separate from Privacy policy URL):** `https://<your-host>/how-it-works.html`
 
 ## Privacy practices tab
 
