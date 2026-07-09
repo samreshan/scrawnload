@@ -32,20 +32,38 @@ function updateBadge(tabId, count) {
   chrome.action.setBadgeBackgroundColor({ tabId, color: "#6d5efc" });
 }
 
+// The content script can report several URLs from one scan() pass in the
+// same tick (e.g. a <video> src plus multiple <a href> links). Those arrive
+// as separate unawaited messages, so without serializing here, concurrent
+// read-modify-write cycles on chrome.storage.session race and a later write
+// silently clobbers an earlier one — dropping whichever item lost the race.
+const tabWriteQueues = new Map();
+
+function withTabLock(tabId, fn) {
+  const prev = tabWriteQueues.get(tabId) || Promise.resolve();
+  const next = prev.then(fn, fn);
+  tabWriteQueues.set(tabId, next.catch(() => {}));
+  return next;
+}
+
 async function addDetection(tabId, item) {
   if (tabId === undefined || tabId < 0) return;
   // blob: and data: URLs come from MSE players and can't be downloaded.
   if (/^(blob|data):/.test(item.url)) return;
-  const items = await getTabItems(tabId);
-  if (items[item.url]) return;
-  items[item.url] = item;
-  await chrome.storage.session.set({ [tabKey(tabId)]: items });
-  updateBadge(tabId, Object.keys(items).length);
+  await withTabLock(tabId, async () => {
+    const items = await getTabItems(tabId);
+    if (items[item.url]) return;
+    items[item.url] = item;
+    await chrome.storage.session.set({ [tabKey(tabId)]: items });
+    updateBadge(tabId, Object.keys(items).length);
+  });
 }
 
 async function clearTab(tabId) {
-  await chrome.storage.session.remove(tabKey(tabId));
-  updateBadge(tabId, 0);
+  await withTabLock(tabId, async () => {
+    await chrome.storage.session.remove(tabKey(tabId));
+    updateBadge(tabId, 0);
+  });
 }
 
 // Network-level detection: observe responses without blocking them.
