@@ -73,6 +73,20 @@ look — no light theme, by design. [test/popup-preview.html](test/popup-preview
 is a standalone harness (mocked `chrome.*` APIs) for iterating on the popup UI
 in a plain browser tab without loading the real extension.
 
+## Publishing to the Chrome Web Store
+
+- `scripts/package.sh` builds `scrawnload.zip` (runtime files only — no git
+  metadata, dev harness, or docs) ready for upload.
+- [STORE_LISTING.md](STORE_LISTING.md) has copy-paste-ready listing copy,
+  the single-purpose statement, and a justification for every permission
+  (the dashboard's Privacy practices tab requires one per permission).
+- [privacy.html](privacy.html) is the privacy policy; host it (e.g. GitHub
+  Pages) and link it from the dashboard — a hosted privacy policy URL is
+  required for a listing with host permissions.
+- `store-assets/` holds listing screenshots (1280×800), generated from
+  [test/store-screenshot.html](test/store-screenshot.html) — a composed
+  browser-chrome + popup mockup, not the raw dev harness.
+
 ## Notes
 
 - Downloading media from a site may violate that site's terms of service —

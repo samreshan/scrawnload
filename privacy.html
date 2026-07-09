@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scrawnload — Privacy Policy</title>
+    <style>
+      body {
+        max-width: 640px;
+        margin: 48px auto;
+        padding: 0 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: #1b1b1f;
+      }
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.1rem; margin-top: 2em; }
+      code { background: #f0f0f0; padding: 0.1em 0.4em; border-radius: 4px; }
+      .updated { color: #666; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <h1>Scrawnload — Privacy Policy</h1>
+    <p class="updated">Last updated: 2026-07-09</p>
+
+    <p>
+      Scrawnload is a browser extension that detects video and audio on the
+      page you're viewing and lets you preview or download it. This page
+      describes what data the extension accesses and what it does with it.
+    </p>
+
+    <h2>What Scrawnload accesses</h2>
+    <p>
+      To find media on the page you're currently viewing, Scrawnload reads:
+    </p>
+    <ul>
+      <li>The URLs of <code>&lt;video&gt;</code>/<code>&lt;audio&gt;</code> elements, media-related links, and meta tags on the active tab</li>
+      <li>Network response metadata (URL and Content-Type header) for requests made by the active tab, to detect media that isn't directly visible in the page's HTML</li>
+    </ul>
+
+    <h2>What Scrawnload does <em>not</em> do</h2>
+    <ul>
+      <li>It does not send any of the above to any server. There is no backend — everything happens locally in your browser.</li>
+      <li>It does not track your browsing history across sites or sessions.</li>
+      <li>It does not collect analytics, telemetry, or usage statistics of any kind.</li>
+      <li>It does not sell, rent, or share any data with third parties, because no data ever leaves your device.</li>
+      <li>It does not require an account, login, or any form of authentication.</li>
+    </ul>
+
+    <h2>Where detected data lives</h2>
+    <p>
+      Detected media URLs are held in <code>chrome.storage.session</code>,
+      which is in-memory, scoped to your browser session, and automatically
+      cleared when you close your browser. Nothing is written to disk by
+      the extension except the media file you explicitly choose to download.
+    </p>
+
+    <h2>Downloads</h2>
+    <p>
+      When you click Download, Scrawnload uses Chrome's built-in downloads
+      API to save the file you selected to your computer, the same as
+      clicking a download link normally would. For HLS streams, video
+      segments are fetched and merged into a single file entirely inside
+      your browser (using ffmpeg compiled to WebAssembly, running in an
+      offscreen page) — this processing never leaves your machine either.
+    </p>
+
+    <h2>Permissions</h2>
+    <p>Scrawnload requests the following permissions, each used only for the purpose below:</p>
+    <ul>
+      <li><strong>Read and change data on all websites you visit</strong> (host permissions) — required to detect media on whatever page you're currently viewing; Scrawnload only acts on the active tab.</li>
+      <li><strong>Downloads</strong> — to save the file you chose to your device.</li>
+      <li><strong>Storage</strong> — to hold the list of detected media for the current tab in memory (see above).</li>
+      <li><strong>webRequest</strong> — read-only observation of response URLs/headers to detect media; Scrawnload never modifies or blocks any request.</li>
+      <li><strong>webNavigation</strong> — to clear the detected-media list when you navigate to a new page.</li>
+      <li><strong>Tabs</strong> — to know which tab's media to show in the popup.</li>
+      <li><strong>Offscreen</strong> — to run the HLS-merging engine (ffmpeg.wasm), which needs a document context the background service worker doesn't have.</li>
+    </ul>
+
+    <h2>Changes to this policy</h2>
+    <p>
+      If this policy changes, the "Last updated" date above will change
+      accordingly. Material changes will also be reflected in the
+      extension's Chrome Web Store listing.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about this policy or the extension can be filed as an issue
+      on the project's source repository.
+    </p>
+  </body>
+</html>

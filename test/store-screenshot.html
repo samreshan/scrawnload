@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Scrawnload store screenshot rig</title>
+    <link rel="stylesheet" href="../popup.css" />
+    <style>
+      /* Rig-only chrome: composes a fake browser window + popup for a
+         realistic 1280x800 store listing screenshot. Not shipped. */
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1280px;
+        height: 800px;
+        overflow: hidden;
+        background: #e8e8ec;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      #browser {
+        width: 1280px;
+        height: 800px;
+        display: flex;
+        flex-direction: column;
+      }
+      #titlebar {
+        height: 44px;
+        background: #dcdce1;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .dot { width: 12px; height: 12px; border-radius: 50%; }
+      .dot.red { background: #ff5f57; }
+      .dot.yellow { background: #febc2e; }
+      .dot.green { background: #28c840; }
+      #tabbar {
+        height: 40px;
+        background: #dcdce1;
+        display: flex;
+        align-items: flex-end;
+        padding: 0 12px;
+        flex-shrink: 0;
+      }
+      #tab {
+        background: #f5f5f7;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 16px;
+        font-size: 13px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #toolbar {
+        height: 48px;
+        background: #f5f5f7;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 10px;
+        flex-shrink: 0;
+        border-bottom: 1px solid #d5d5da;
+        position: relative;
+      }
+      .nav-icon { width: 16px; height: 16px; color: #888; }
+      #addressbar {
+        flex: 1;
+        background: #e8e8ec;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #extbtn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e2e2e7;
+      }
+      #extbtn img { width: 18px; height: 18px; }
+      #page {
+        flex: 1;
+        background: #ffffff;
+        filter: blur(1.5px) brightness(0.97);
+        padding: 40px 60px;
+        overflow: hidden;
+      }
+      #page h1 { font-size: 28px; color: #1a1a1a; }
+      #page p { color: #555; max-width: 60ch; line-height: 1.6; }
+      #page .video-placeholder {
+        width: 480px;
+        height: 270px;
+        background: linear-gradient(135deg, #cfd8dc, #90a4ae);
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+      #popup-anchor {
+        position: absolute;
+        z-index: 10;
+        top: 44px;
+        right: 14px;
+        width: 400px;
+        background: #020202;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="browser">
+      <div id="titlebar">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+      </div>
+      <div id="tabbar">
+        <div id="tab">
+          <span>🎬</span>
+          <span>Scrawnload test page</span>
+        </div>
+      </div>
+      <div id="toolbar">
+        <div id="addressbar">🔒 example.com/watch</div>
+        <div id="extbtn"><img src="../icons/icon48.png" alt="" /></div>
+        <div id="popup-anchor">
+          <header>
+            <div class="brand">
+              <img src="../icons/icon48.png" alt="" width="18" height="18" />
+              <span class="wordmark">scrawnload<span class="cursor" aria-hidden="true"></span></span>
+            </div>
+            <span class="header-count" id="count">5 items</span>
+          </header>
+          <div id="list" class="list" role="list"></div>
+          <footer>local-only · no data leaves this tab</footer>
+        </div>
+      </div>
+      <div id="page">
+        <h1>Big Buck Bunny — full video</h1>
+        <p>
+          An example page with an embedded video player and a few download
+          links, the kind of page Scrawnload detects media on automatically.
+        </p>
+        <div class="video-placeholder"></div>
+      </div>
+    </div>
+
+    <script>
+      const FAKE_ITEMS = [
+        { url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", kind: "file", source: "dom", title: "flower" },
+        { url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm", kind: "file", source: "network", title: "flower" },
+        { url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", kind: "stream", source: "dom", title: "big buck bunny" },
+        { url: "https://playertest.longtailvideo.com/adaptive/oceans_aes/oceans_aes.m3u8", kind: "stream", source: "network", title: "oceans aes" },
+        { url: "https://example.com/manifest.mpd", kind: "stream", source: "dom", title: "dash sample" },
+      ];
+
+      window.chrome = {
+        tabs: { query: () => Promise.resolve([{ id: 1 }]) },
+        storage: { session: { onChanged: { addListener: () => {} } } },
+        runtime: {
+          sendMessage: (msg, cb) => {
+            if (msg.type === "GET_DETECTED") return cb({ items: FAKE_ITEMS });
+            if (msg.type === "GET_JOBS") return cb({ jobs: [] });
+          },
+        },
+      };
+    </script>
+    <script src="../vendor/hls.min.js"></script>
+    <script src="../lib/m3u8.js"></script>
+    <script src="../popup.js"></script>
+  </body>
+</html>

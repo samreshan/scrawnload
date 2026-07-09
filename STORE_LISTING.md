@@ -1,0 +1,88 @@
+# Chrome Web Store listing — copy-paste reference
+
+Everything below goes into the Developer Dashboard by hand; nothing here is
+read by Chrome itself. Draft once, paste into the relevant dashboard fields.
+
+## Store listing tab
+
+**Title:** Scrawnload
+
+**Summary** (≤132 chars):
+> Detect, preview, and download video/audio from the current page — including HLS streams, merged locally in your browser.
+
+**Category:** Tools (or the closest equivalent in the current dashboard dropdown — this list changes over time, pick nearest match)
+
+**Detailed description:**
+> Scrawnload finds playable video and audio on the page you're currently
+> viewing and lets you preview it before saving a local copy.
+>
+> WHAT IT DOES
+> • Detects direct media files (MP4, WebM, MP3, and other common formats)
+>   as well as HLS (.m3u8) streams
+> • Click-to-expand preview, right in the popup, before you download
+>   anything
+> • For HLS streams with multiple quality variants, pick a resolution
+>   before downloading
+> • HLS segments are fetched and merged into a single .mp4 entirely inside
+>   your browser — no external server ever sees the video
+>
+> WHAT IT DOESN'T DO
+> • No account, no login, no telemetry, no analytics
+> • Nothing is ever sent off your device — see the privacy policy below
+> • Does not work on YouTube, or on DRM-protected content (Widevine/
+>   FairPlay) — these are out of scope by design, not a bug
+>
+> WHO IT'S FOR
+> Use it for content you have the rights to save: your own uploaded
+> videos, self-hosted media, open/Creative-Commons-licensed streams,
+> educational material, or any site whose own terms permit local saving.
+> Downloading media from a given site may still be subject to that
+> site's own terms of service — this extension doesn't make that
+> determination for you, so check before saving something you don't
+> have rights to.
+>
+> Source available; privacy policy linked below.
+
+**Privacy policy URL:** (fill in once hosted — see checklist below)
+
+## Privacy practices tab
+
+**Single purpose:**
+> Detects downloadable video and audio on the currently active web page
+> and lets the user preview and save it locally.
+
+**Permission justifications** (one field per permission in the dashboard):
+
+| Permission | Justification to paste |
+|---|---|
+| Host permissions (`<all_urls>`) | Needed to detect media on whatever page the user is currently viewing — the extension only acts on the active tab, not in the background across other sites. |
+| `downloads` | Used to save the file the user explicitly chose to their device via Chrome's downloads API. |
+| `storage` | Holds the list of detected media for the current tab in `chrome.storage.session` (in-memory, cleared on browser close) so the popup can display it. |
+| `webRequest` | Read-only: observes response URLs and Content-Type headers to detect media that isn't visible in the page's HTML. Never blocks or modifies requests. |
+| `webNavigation` | Clears the detected-media list when the tab navigates to a new page. |
+| `tabs` | Identifies which tab's detected media to show when the popup opens. |
+| `offscreen` | Hosts the ffmpeg.wasm engine that merges HLS segments into one file — this requires a document context the background service worker doesn't have. |
+
+**Data usage disclosure:** Be literal and accurate here rather than
+optimizing how it looks — the categories in the dashboard form ask what the
+extension *accesses*, not just what it *transmits*:
+
+- **Website content** — yes, accessed (video/audio URLs and page markup,
+  read locally to power detection). Note in the free-text justification
+  that it's processed transiently in-browser and never transmitted,
+  stored beyond the current session, or shared.
+- Every other category (personally identifiable info, health, financial,
+  authentication, personal communications, location, web history, user
+  activity) — not collected, leave unchecked.
+- Certify: does not sell user data to third parties; does not use data
+  for purposes unrelated to the single purpose above; does not use data
+  to determine creditworthiness or for lending. All true here, since
+  nothing leaves the device.
+- Remote code: certify **no remotely hosted code** — true, everything
+  (including ffmpeg.wasm and hls.js) is bundled in the package, nothing
+  is fetched from a CDN at runtime.
+
+## Screenshot
+
+`store-assets/screenshot-1.png` (generated from the popup preview harness,
+1280×800) — see below for how to regenerate if the UI changes.

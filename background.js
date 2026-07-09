@@ -94,17 +94,32 @@ chrome.webRequest.onResponseStarted.addListener(
 
 // --- HLS download jobs (delegated to the offscreen ffmpeg.wasm host) ---
 
+// Clicking download on two HLS items back-to-back fires two DOWNLOAD_STREAM
+// messages before either finishes creating the offscreen document, so both
+// could see zero contexts and both call createDocument() — which throws on
+// the second call, since only one offscreen document may exist at a time.
+// creatingOffscreen dedupes concurrent creation attempts; it's not a cached
+// "is it ready" flag, so a later close (see releaseBlob) can't leave it stale.
+let creatingOffscreen = null;
+
 async function ensureOffscreen() {
   const contexts = await chrome.runtime.getContexts({
     contextTypes: ["OFFSCREEN_DOCUMENT"],
   });
   if (contexts.length > 0) return;
-  await chrome.offscreen.createDocument({
-    url: "offscreen.html",
-    reasons: ["WORKERS", "BLOBS"],
-    justification:
-      "Runs ffmpeg.wasm to merge HLS stream segments into a single video file",
-  });
+  if (!creatingOffscreen) {
+    creatingOffscreen = chrome.offscreen
+      .createDocument({
+        url: "offscreen.html",
+        reasons: ["WORKERS", "BLOBS"],
+        justification:
+          "Runs ffmpeg.wasm to merge HLS stream segments into a single video file",
+      })
+      .finally(() => {
+        creatingOffscreen = null;
+      });
+  }
+  await creatingOffscreen;
 }
 
 function jobKey(jobId) {
@@ -258,5 +273,8 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  chrome.storage.session.remove(tabKey(tabId));
+  // Routed through the same lock as addDetection/clearTab: otherwise a
+  // MEDIA_DETECTED write already in flight when the tab closes could land
+  // after this remove and resurrect a storage entry for a dead tab.
+  withTabLock(tabId, () => chrome.storage.session.remove(tabKey(tabId)));
 });

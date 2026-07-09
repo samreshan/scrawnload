@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Scrawnload",
-  "version": "0.1.0",
-  "description": "Detects video and audio files on the current page and lets you download them.",
+  "version": "1.0.0",
+  "description": "Detects video and audio on the current page, previews it, and downloads it — including HLS streams merged locally in your browser.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
