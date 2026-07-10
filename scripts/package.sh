@@ -14,7 +14,13 @@ zip -rq "$OUT" . \
   -x ".DS_Store" \
   -x "test/*" \
   -x "scripts/*" \
+  -x "store-assets/*" \
   -x "*.md" \
+  -x "privacy.html" \
+  -x "terms.html" \
+  -x "how-it-works.html" \
+  -x "docs.css" \
+  -x "LICENSE" \
   -x "$OUT"
 
 echo "Built $OUT ($(du -h "$OUT" | cut -f1))"
