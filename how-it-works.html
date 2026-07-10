@@ -17,34 +17,34 @@
 
     <p>
       Scrawnload finds playable video and audio on the page you're
-      currently viewing and lets you preview it before saving a local copy.
+      currently viewing, lets you preview it right in the popup, and saves
+      a local copy — including HLS streams, which are decrypted and merged
+      into a single file entirely inside your browser.
     </p>
 
     <h2>What it does</h2>
     <ul>
-      <li>Detects direct media files (MP4, WebM, MP3, and other common formats) as well as HLS (<code>.m3u8</code>) streams</li>
-      <li>Click-to-expand preview, right in the popup, before you download anything</li>
-      <li>For HLS streams with multiple quality variants, pick a resolution before downloading</li>
-      <li>HLS segments are fetched and merged into a single <code>.mp4</code> entirely inside your browser — no external server ever sees the video</li>
+      <li>Detects direct media files (MP4, WebM, MP3, and other common formats) as well as HLS (<code>.m3u8</code>) streams, from both the page's markup and its network requests</li>
+      <li>Click any detected item to preview it in place before downloading anything</li>
+      <li>For HLS streams with multiple quality variants, choose a resolution first</li>
+      <li>AES-128-encrypted HLS segments are decrypted and remuxed into a single playable <code>.mp4</code> — using ffmpeg compiled to WebAssembly, running entirely in your browser. No server, no upload, no external processing.</li>
     </ul>
 
     <h2>What it doesn't do</h2>
     <ul>
-      <li>No account, no login, no telemetry, no analytics</li>
-      <li>Nothing is ever sent off your device — see the <a href="privacy.html">privacy policy</a></li>
-      <li>Doesn't work on YouTube, or on DRM-protected content (Widevine/FairPlay) — these are out of scope by design, not a bug</li>
+      <li>No account, no login, no telemetry, no analytics — nothing is ever sent off your device, see the <a href="privacy.html">privacy policy</a></li>
+      <li>Doesn't touch YouTube or DRM-protected content (Widevine/FairPlay) — both are out of scope by design, not a bug</li>
+      <li>Doesn't work on live streams (no end marker) or bypass any site's access controls</li>
     </ul>
 
     <h2>Who it's for</h2>
     <p>
-      Use it for content you have the rights to save: your own uploaded
-      videos, self-hosted media, open/Creative-Commons-licensed streams,
-      educational material, or any site whose own terms permit local
-      saving. Downloading media from a given site may still be subject to
-      that site's own terms of service — this extension doesn't make that
-      determination for you, so check before saving something you don't
-      have rights to. See the <a href="terms.html">terms &amp; conditions</a>
-      for more.
+      Save content you actually have the rights to: your own uploads,
+      self-hosted media, Creative-Commons or otherwise openly licensed
+      streams, and educational material. Downloading from a given site may
+      still be subject to that site's own terms — Scrawnload doesn't make
+      that determination for you, so check first. See the
+      <a href="terms.html">terms &amp; conditions</a> for more.
     </p>
 
     <div class="docs-footer">

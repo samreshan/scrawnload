@@ -14,34 +14,38 @@ read by Chrome itself. Draft once, paste into the relevant dashboard fields.
 
 **Detailed description:**
 > Scrawnload finds playable video and audio on the page you're currently
-> viewing and lets you preview it before saving a local copy.
+> viewing, lets you preview it right in the popup, and saves a local copy —
+> including HLS streams, which are decrypted and merged into a single file
+> entirely inside your browser.
 >
 > WHAT IT DOES
 > • Detects direct media files (MP4, WebM, MP3, and other common formats)
->   as well as HLS (.m3u8) streams
-> • Click-to-expand preview, right in the popup, before you download
+>   as well as HLS (.m3u8) streams, from both the page's markup and its
+>   network requests
+> • Click any detected item to preview it in place before downloading
 >   anything
-> • For HLS streams with multiple quality variants, pick a resolution
->   before downloading
-> • HLS segments are fetched and merged into a single .mp4 entirely inside
->   your browser — no external server ever sees the video
+> • For HLS streams with multiple quality variants, choose a resolution
+>   first
+> • AES-128-encrypted HLS segments are decrypted and remuxed into a single
+>   playable .mp4 — using ffmpeg compiled to WebAssembly, running entirely
+>   in your browser. No server, no upload, no external processing.
 >
 > WHAT IT DOESN'T DO
-> • No account, no login, no telemetry, no analytics
-> • Nothing is ever sent off your device — see the privacy policy below
-> • Does not work on YouTube, or on DRM-protected content (Widevine/
->   FairPlay) — these are out of scope by design, not a bug
+> • No account, no login, no telemetry, no analytics — nothing is ever
+>   sent off your device
+> • Doesn't touch YouTube or DRM-protected content (Widevine/FairPlay) —
+>   both are out of scope by design, not a bug
+> • Doesn't work on live streams (no end marker) or bypass any site's
+>   access controls
 >
 > WHO IT'S FOR
-> Use it for content you have the rights to save: your own uploaded
-> videos, self-hosted media, open/Creative-Commons-licensed streams,
-> educational material, or any site whose own terms permit local saving.
-> Downloading media from a given site may still be subject to that
-> site's own terms of service — this extension doesn't make that
-> determination for you, so check before saving something you don't
-> have rights to.
+> Save content you actually have the rights to: your own uploads,
+> self-hosted media, Creative-Commons or otherwise openly licensed
+> streams, and educational material. Downloading from a given site may
+> still be subject to that site's own terms — Scrawnload doesn't make
+> that determination for you, so check first.
 >
-> Source available; privacy policy linked below.
+> Source available on GitHub; privacy policy and terms linked below.
 
 (Note: this prose is duplicated in `how-it-works.html` — keep the two in sync if edited.)
 
