@@ -7,8 +7,8 @@ read by Chrome itself. Draft once, paste into the relevant dashboard fields.
 
 **Title:** Scrawnload
 
-**Summary** (≤132 chars):
-> Detect, preview, and download video/audio from the current page — including HLS streams, merged locally in your browser.
+**Summary** (≤132 chars, 110 used):
+> Preview and download video, audio, and HLS streams from any page — decrypted and merged right in your browser.
 
 **Category:** Tools (or the closest equivalent in the current dashboard dropdown — this list changes over time, pick nearest match)
 
