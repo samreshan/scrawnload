@@ -151,6 +151,14 @@ header {
   color: var(--muted);
 }
 
+/* `display: flex` above outranks the UA stylesheet's `[hidden] { display:
+   none }` (author rules always beat UA rules regardless of specificity),
+   so the hidden attribute alone doesn't hide this element — confirmed via
+   getComputedStyle, not assumed. This rule restores it. */
+.ack[hidden] {
+  display: none;
+}
+
 .ack-dismiss {
   flex-shrink: 0;
   background: none;
