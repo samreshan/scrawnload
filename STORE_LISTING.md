@@ -65,7 +65,7 @@ read by Chrome itself. Draft once, paste into the relevant dashboard fields.
 |---|---|
 | Host permissions (`<all_urls>`) | Needed to detect media on whatever page the user is currently viewing — the extension only acts on the active tab, not in the background across other sites. |
 | `downloads` | Used to save the file the user explicitly chose to their device via Chrome's downloads API. |
-| `storage` | Holds the list of detected media for the current tab in `chrome.storage.session` (in-memory, cleared on browser close) so the popup can display it. |
+| `storage` | Holds the list of detected media for the current tab in `chrome.storage.session` (in-memory, cleared on browser close) so the popup can display it, plus a single boolean flag in `chrome.storage.local` recording that the user has seen the one-time "only download media you have the rights to" notice. |
 | `webRequest` | Read-only: observes response URLs and Content-Type headers to detect media that isn't visible in the page's HTML. Never blocks or modifies requests. |
 | `webNavigation` | Clears the detected-media list when the tab navigates to a new page. |
 | `tabs` | Identifies which tab's detected media to show when the popup opens. |
