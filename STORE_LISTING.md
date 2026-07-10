@@ -45,9 +45,9 @@ read by Chrome itself. Draft once, paste into the relevant dashboard fields.
 
 (Note: this prose is duplicated in `how-it-works.html` — keep the two in sync if edited.)
 
-**Privacy policy URL:** `https://<your-host>/privacy.html` (fill in once hosted)
+**Privacy policy URL:** `https://samreshan.github.io/scrawnload/privacy.html`
 
-**Website field (separate from Privacy policy URL):** `https://<your-host>/how-it-works.html`
+**Website field (separate from Privacy policy URL):** `https://samreshan.github.io/scrawnload/how-it-works.html`
 
 ## Privacy practices tab
 
